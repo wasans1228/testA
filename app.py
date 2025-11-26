@@ -1,28 +1,29 @@
+# simple_stats_app.py
 import streamlit as st
-import random
+import pandas as pd
+import numpy as np
 
-# 페이지 설정
-st.set_page_config(page_title="🎰 로또 번호 생성기", page_icon="🎯", layout="centered")
+st.title("📊 간단 통계 계산기")
+st.markdown("CSV 파일을 업로드하면 각 열의 **평균, 분산, 표준편차**를 계산해 보여줍니다.")
 
-st.title("🎰 로또 번호 생성기 (보너스 포함)")
-st.markdown("버튼을 누르면 **1~45** 중에서 **메인 6개 + 보너스 1개** 번호를 뽑아요! 🍀")
+# CSV 파일 업로드
+uploaded_file = st.file_uploader("CSV 파일 업로드", type=["csv"])
 
-count = st.slider("몇 세트를 뽑을까요?", 1, 10, 1)
+if uploaded_file is not None:
+    df = pd.read_csv(uploaded_file)
+    st.write("### 업로드한 데이터", df)
 
-def draw_one_set():
-    main_numbers = sorted(random.sample(range(1, 46), 6))
-    remaining = [n for n in range(1, 46) if n not in main_numbers]
-    bonus = random.choice(remaining)
-    return main_numbers, bonus
-
-if st.button("🎲 로또 번호 뽑기"):
-    for i in range(1, count + 1):
-        main, bonus = draw_one_set()
-        st.success(f"세트 {i} ➜ 🎯 메인: {', '.join(map(str, main))}")
-        st.info(f"세트 {i} ➜ 💎 보너스: {bonus}")
-    st.balloons()
+    # 숫자형 컬럼만 선택
+    numeric_cols = df.select_dtypes(include=np.number).columns.tolist()
+    
+    if numeric_cols:
+        st.write("### 통계 요약")
+        stats_df = pd.DataFrame(index=numeric_cols)
+        stats_df["평균"] = df[numeric_cols].mean()
+        stats_df["분산"] = df[numeric_cols].var()
+        stats_df["표준편차"] = df[numeric_cols].std()
+        st.table(stats_df)
+    else:
+        st.warning("숫자형 컬럼이 없습니다.")
 else:
-    st.caption("⬆️ 세트 개수를 정하고 버튼을 눌러보세요!")
-
-st.markdown("---")
-st.caption("Made with Streamlit · 행운 가득! 🍀")
+    st.info("CSV 파일을 업로드해주세요.")
